@@ -7,7 +7,7 @@
     <string name="nav_header_desc">Navigation header</string>
 
 
-    <string name="menu_home">Cadastro de eventos</string>
-    <string name="menu_share">Help</string>
+    <string name="menu_home">Eventos Cadastrados</string>
+    <string name="menu_share">Informações adicionais</string>
     <string name="title_activity_maps_fragment">Map</string>
 </resources>

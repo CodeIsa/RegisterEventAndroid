@@ -1,12 +1,27 @@
 package com.isabelle.registerevent;
 
+import android.content.Context;
+import android.content.DialogInterface;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Bundle;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
+import android.os.Vibrator;
+import android.util.Log;
 import android.view.View;
 
+import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.navigation.NavController;
@@ -15,6 +30,9 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
 import com.google.android.material.navigation.NavigationView;
+import com.isabelle.registerevent.controller.CadastrarController;
+import com.isabelle.registerevent.dao.Localidades_dao;
+import com.isabelle.registerevent.model.Localidades;
 
 import androidx.drawerlayout.widget.DrawerLayout;
 
@@ -22,55 +40,141 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import android.view.Menu;
+import android.widget.SearchView;
+import android.widget.Toast;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
 
-    private AppBarConfiguration mAppBarConfiguration;
 
-    private FragmentManager fragmentManager;
+    GoogleMap map;
+    SupportMapFragment mapFragment;
+    SearchView searchView;
+
+    private final int TAG_CODE_PERMISSION_LOCATION=1;
+
+
+    CadastrarController controller;
+    LatLng latLng;
+    boolean confirmed = false;
+    Address address;
+    Localidades_dao dao;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Toolbar toolbar = findViewById(R.id.toolbar); //barra to topo do app
-        setSupportActionBar(toolbar);
+        searchView = findViewById(R.id.sv_location);
+        mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.google_map);
 
-        DrawerLayout drawer = findViewById(R.id.drawer_layout);
-        NavigationView navigationView = findViewById(R.id.nav_view);
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
-        mAppBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.nav_home, R.id.nav_share)
-                .setDrawerLayout(drawer)
-                .build();
-        //NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
-        //NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
-        //NavigationUI.setupWithNavController(navigationView, navController);
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                String location = searchView.getQuery().toString();
+                List<Address> addressList = null;
 
-        fragmentManager = getSupportFragmentManager();
+                if(location != null || !location.equals("")){
+                    Geocoder geocoder = new Geocoder(MainActivity.this);
+                    try{
+                        addressList = geocoder.getFromLocationName(location,1);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
 
-        FragmentTransaction transaction = fragmentManager.beginTransaction(); //inicia a transacao
+                    address = addressList.get(0);
+                    latLng = new LatLng(address.getLatitude(),address.getLongitude());
+                    map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 12));
 
-        transaction.add(R.id.container, new MapsFragment(), "MapsFragment");
+                }
+                return false;
+            }
 
-        transaction.commitAllowingStateLoss();
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
+            }
+        });
+
+        mapFragment.getMapAsync(this);
+    }
+    public void vibrar(MainActivity view){
+        Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        vibrator.vibrate(1000);
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
+    public void onMapReady(GoogleMap googleMap) {
+        map = googleMap;
+
+        dao = new Localidades_dao(getBaseContext());
+        ArrayList<Localidades> locList = new ArrayList<Localidades>();
+        locList = dao.getLocalizacoes();
+        Localidades loca = new Localidades();
+
+        Log.i("LOCLIST: ", locList.toString());
+
+        for (Iterator<Localidades> localizacao = locList.iterator(); localizacao.hasNext();) {
+            loca = localizacao.next();
+            Log.i("LOCAAAAA: ", loca.getLatitude());
+
+
+            MarkerOptions marker = new MarkerOptions();
+
+            marker.position(new LatLng(Double.parseDouble(loca.getLatitude()), Double.parseDouble(loca.getLongitude()))).title(loca.getEndereco());
+            marker.icon(BitmapDescriptorFactory.fromResource(R.drawable.calendar));
+
+
+            map.addMarker(marker);
+
+        }
+
+        map.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng point) {
+                //allPoints.add(point);
+
+                Log.i("ponto: ", point.toString());
+
+                vibrar(MainActivity.this);
+                new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Confirmar ação")
+                        .setMessage("Registrar este local?")
+                        .setIcon(R.drawable.calendar)
+                        .setPositiveButton("Sim", new DialogInterface.OnClickListener() {
+
+                            public void onClick(DialogInterface dialog, int whichButton) {
+                                controller = new CadastrarController();
+                                confirmed = controller.cadastrarEvento(latLng); //chama o controller
+                                if(confirmed == true){
+
+                                    boolean success = dao.salvar(String.valueOf(latLng.latitude), String.valueOf(latLng.longitude), "Jonatas");
+
+                                    if(success){
+
+                                        MarkerOptions marker = new MarkerOptions();
+
+
+                                        marker.position(new LatLng(address.getLatitude(), address.getLongitude())).title(address.getAddressLine(0));
+                                        marker.icon(BitmapDescriptorFactory.fromResource(R.drawable.calendar));
+
+
+                                        map.addMarker(marker);
+                                        map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng,12));
+                                        Toast.makeText(MainActivity.this, "Evento Marcado!!", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            }})
+                        .setNegativeButton("Não", null).show();
+            }
+        });
     }
 
-    //@Override
-    //public boolean onSupportNavigateUp() {
-        /*NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
-        return NavigationUI.navigateUp(navController, mAppBarConfiguration)
-                || super.onSupportNavigateUp();*/
-    //}
 
 }

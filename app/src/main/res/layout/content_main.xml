@@ -15,8 +15,25 @@
         app:defaultNavHost="true"
         />
 
-    <FrameLayout
-        android:id="@+id/container"
+    <fragment
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:id="@+id/google_map"
+        android:name="com.google.android.gms.maps.SupportMapFragment" />
+
+
+    <SearchView
+        android:id="@+id/sv_location"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_search"
+        android:elevation="5dp"
+        android:iconifiedByDefault="false"
+        android:queryHint="Onde será seu evento?"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout_editor_absoluteX="10dp" />
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>
