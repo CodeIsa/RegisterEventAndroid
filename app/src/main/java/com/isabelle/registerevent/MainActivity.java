@@ -87,8 +87,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 List<Address> addressList = null;
 
                 if(location != null || !location.equals("")){
+
                     vibrar(MainActivity.this);
+
                     Geocoder geocoder = new Geocoder(MainActivity.this);
+
                     new AlertDialog.Builder(MainActivity.this)
                             .setTitle("Confirmar ação")
                             .setMessage("Registrar este local?")
@@ -98,6 +101,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                                 public void onClick(DialogInterface dialog, int whichButton) {
                                     controller = new CadastrarController();
                                     confirmed = controller.cadastrarEvento(latLng); //chama o controller
+
                                     if(confirmed == true){
 
                                         boolean success = dao.salvar(String.valueOf(latLng.latitude), String.valueOf(latLng.longitude), "Isa");
