@@ -75,15 +75,52 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.google_map);
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+
+            public void vibrar(MainActivity view){
+                Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+                vibrator.vibrate(1000);
+            }
+
             @Override
             public boolean onQueryTextSubmit(String query) {
                 String location = searchView.getQuery().toString();
                 List<Address> addressList = null;
 
                 if(location != null || !location.equals("")){
+                    vibrar(MainActivity.this);
                     Geocoder geocoder = new Geocoder(MainActivity.this);
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("Confirmar ação")
+                            .setMessage("Registrar este local?")
+                            .setIcon(R.drawable.calendar)
+                            .setPositiveButton("Sim", new DialogInterface.OnClickListener() {
+
+                                public void onClick(DialogInterface dialog, int whichButton) {
+                                    controller = new CadastrarController();
+                                    confirmed = controller.cadastrarEvento(latLng); //chama o controller
+                                    if(confirmed == true){
+
+                                        boolean success = dao.salvar(String.valueOf(latLng.latitude), String.valueOf(latLng.longitude), "Isa");
+
+                                        if(success){
+
+                                            MarkerOptions marker = new MarkerOptions();
+
+
+                                            marker.position(new LatLng(address.getLatitude(), address.getLongitude())).title(address.getAddressLine(0));
+                                            marker.icon(BitmapDescriptorFactory.fromResource(R.drawable.calendar));
+
+
+                                            map.addMarker(marker);
+                                            map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng,12));
+                                            Toast.makeText(MainActivity.this, "Evento Marcado!!", Toast.LENGTH_SHORT).show();
+                                        }
+                                    }
+                                }})
+                            .setNegativeButton("Não", null).show();
                     try{
                         addressList = geocoder.getFromLocationName(location,1);
+
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -104,10 +141,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         mapFragment.getMapAsync(this);
     }
-    public void vibrar(MainActivity view){
-        Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-        vibrator.vibrate(1000);
-    }
+
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -135,45 +169,14 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         }
 
-        map.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
-            @Override
-            public void onMapClick(LatLng point) {
-                //allPoints.add(point);
-
-                Log.i("ponto: ", point.toString());
-
-                vibrar(MainActivity.this);
-                new AlertDialog.Builder(MainActivity.this)
-                        .setTitle("Confirmar ação")
-                        .setMessage("Registrar este local?")
-                        .setIcon(R.drawable.calendar)
-                        .setPositiveButton("Sim", new DialogInterface.OnClickListener() {
-
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                controller = new CadastrarController();
-                                confirmed = controller.cadastrarEvento(latLng); //chama o controller
-                                if(confirmed == true){
-
-                                    boolean success = dao.salvar(String.valueOf(latLng.latitude), String.valueOf(latLng.longitude), "Jonatas");
-
-                                    if(success){
-
-                                        MarkerOptions marker = new MarkerOptions();
-
-
-                                        marker.position(new LatLng(address.getLatitude(), address.getLongitude())).title(address.getAddressLine(0));
-                                        marker.icon(BitmapDescriptorFactory.fromResource(R.drawable.calendar));
-
-
-                                        map.addMarker(marker);
-                                        map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng,12));
-                                        Toast.makeText(MainActivity.this, "Evento Marcado!!", Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-                            }})
-                        .setNegativeButton("Não", null).show();
-            }
-        });
+//        map.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+//            @Override
+//            public void onMapClick(LatLng point) {
+//
+//                Log.i("ponto: ", point.toString());
+//
+//            }
+//        });
     }
 
 

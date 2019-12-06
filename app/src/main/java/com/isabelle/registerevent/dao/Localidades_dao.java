@@ -3,7 +3,6 @@ package com.isabelle.registerevent.dao;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import com.isabelle.registerevent.dao.SQLGateway;
 import com.isabelle.registerevent.model.Localidades;
 
 

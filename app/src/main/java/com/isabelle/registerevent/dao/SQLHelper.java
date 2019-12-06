@@ -5,7 +5,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 public class SQLHelper extends SQLiteOpenHelper{
-    private static final String DATABASE_NAME = "localizacoes.db";
+    private static final String DATABASE_NAME = "locais.db";
     private static final int DATABASE_VERSION = 2; //2 para a 2 versao, criando nova coluna
     private final String CREATE_TABLE =
             "CREATE TABLE " +
